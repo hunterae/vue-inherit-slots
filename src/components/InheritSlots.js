@@ -1,4 +1,7 @@
 // TODO: implement alternate approach where a default scope is evaluated with props included the merged slots and scopedSlots
+// TODO: consider removing the merging of scopedSlots - possible antipattern or negative side-effect
+//  as it requires mutating the scopedSlots object that is passed in. It is also fairly simple to merge them manually
+
 import { omit, flatten } from '../utils/HelperUtils'
 
 export default {
@@ -29,6 +32,9 @@ export default {
 
     if (scopedSlots) {
       let parentScopedSlots = parent.$scopedSlots || {}
+      if (!inheritDefaultSlot) {
+        parentScopedSlots = omit(parentScopedSlots, ['default'])
+      }
       Object.entries(parentScopedSlots).forEach(([key, value]) => {
         scopedSlots[key] = value
       })
