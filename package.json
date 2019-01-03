@@ -1,6 +1,6 @@
 {
   "name": "vue-inherit-slots",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "dist/vue-inherit-slots.umd.js",
   "module": "dist/vue-inherit-slots.esm.js",
   "unpkg": "dist/vue-inherit-slots.min.js",
