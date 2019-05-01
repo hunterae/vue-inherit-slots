@@ -1,15 +1,16 @@
-// TODO: implement alternate approach where a default scope is evaluated with props included the merged slots and scopedSlots
-// TODO: consider removing the merging of scopedSlots - possible antipattern or negative side-effect
-//  as it requires mutating the scopedSlots object that is passed in. It is also fairly simple to merge them manually
-
-import { omit, flatten } from '../utils/HelperUtils'
+import { omit } from '../utils/HelperUtils'
 
 export default {
   props: {
     inheritDefaultSlot: {
       type: Boolean,
       default: false
-    }
+    },
+    inheritParentSlots: {
+      type: Boolean,
+      default: true
+    },
+    element: {}
   },
   functional: true,
   render(h, context) {
@@ -19,18 +20,25 @@ export default {
     // if scopedSlots were passed in, parent scopedSlots will be merged into this hash
     let scopedSlots = context.data.scopedSlots
 
-    let { inheritDefaultSlot } = context.props
-    let parent = context.parent
+    if (!scopedSlots) {
+      context.data.scopedSlots = {}
+      scopedSlots = context.data.scopedSlots
+    }
 
-    let parentSlots = inheritDefaultSlot
-      ? parent.$slots
-      : omit(parent.$slots, ['default'])
+    let { inheritDefaultSlot, inheritParentSlots, element } = context.props
+    if (!element) {
+      element = context.data.tag
+    }
 
-    Object.entries(parentSlots).forEach(([slotName, slots]) => {
-      allSlots[slotName] = slots.concat(allSlots[slotName] || [])
-    })
-
-    if (scopedSlots) {
+    let parentSlots = []
+    if (inheritParentSlots) {
+      let parent = context.parent
+      parentSlots = inheritDefaultSlot
+        ? parent.$slots
+        : omit(parent.$slots, ['default'])
+      Object.entries(parentSlots).forEach(([slotName, slots]) => {
+        allSlots[slotName] = slots.concat(allSlots[slotName] || [])
+      })
       let parentScopedSlots = parent.$scopedSlots || {}
       if (!inheritDefaultSlot) {
         parentScopedSlots = omit(parentScopedSlots, ['default'])
@@ -40,8 +48,26 @@ export default {
       })
     }
 
-    // This makes the slots child slots of the component that is inheriting slots
-    let slotChildren = flatten(Object.values(allSlots))
-    return slotChildren
+    let slotChildren = []
+    Object.entries(allSlots).forEach(([slotName, slots]) => {
+      slotChildren.push(
+        h(
+          'template',
+          {
+            slot: slotName
+          },
+          slots
+        )
+      )
+    })
+    if (element) {
+      return h(
+        element,
+        { ...context.data, scopedSlots: scopedSlots },
+        slotChildren
+      )
+    } else {
+      return slotChildren
+    }
   }
 }
